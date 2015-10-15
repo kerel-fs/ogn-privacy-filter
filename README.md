@@ -38,16 +38,18 @@ All the packets from the APRS-Server are forwarded to the station.
 
 3. Configure ogn-decode / manipulate DNS cache
 
-   Currently (v0.2.3) you can't configure the address
+   ~~Currently (v0.2.3) you can't configure the address
    ogn-decode connects to (`aprs.glidernet.org` is hardcoded),
-   so you have to manipulate your local DNS cache:
-   ```
-   $ sudo vi /etc/hosts
-   ```
+   so you have to manipulate your local DNS cache.~~
 
-   Append the following line:
+   Set the address ogn-decode connects to in the receiver configuration file.
    ```
-   127.0.2.1	aprs.glidernet.org
+   $ sudo vi /etc/rtlsdr-ogn/site.conf
+
+   APRS:
+   { Call = "N0CALL";
+     Server = "127.0.2.1:14580";
+   } ;
    ```
 
 
