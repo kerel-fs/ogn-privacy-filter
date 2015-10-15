@@ -91,7 +91,7 @@ class privacyFilter:
             self.client_connected = False
 
 
-    def __init__(self,clients_address = ('127.0.2.1', 14580), server_address = ('aprs-pool.glidernet.org', 14580), ddbInterval = 60):
+    def __init__(self,clients_address = ('127.0.2.1', 14580), server_address = ('aprs-pool.glidernet.org', 14580), ddbInterval = 3600):
         self.clients = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clients.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.clients.setblocking(0)
