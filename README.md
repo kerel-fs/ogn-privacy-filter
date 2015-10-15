@@ -4,6 +4,7 @@ A script to selectively forward APRS packets.
 
 The script listens for incoming connections by ogn-decode
 and connects to an APRS-Server (aprs-pool.glidernet.org).
+Every hour it fetches the DDB to update the local whitelist.
 
 Received packets from the station are only forwared if the
 NoTrack-Flag in the DDB is _not_ set ('Opt-In') or if they
@@ -78,6 +79,28 @@ Listen for new client at 127.0.2.1:14580
 Connected to server 37.187.40.234:14580
 [...]
 ```
+
+To get debug messages, create a short startup script:
+```
+#!/usr/bin/env python3
+
+import logging
+from privacyFilter import privacyFilter
+
+
+if __name__ == "__main__":
+    FORMAT = '%(asctime)-15s %(levelname)-5s %(message)s'
+    logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+
+    client_adress = ('127.0.2.1', 14580)
+    server_address = ('aprs-pool.glidernet.org', 14580)
+    ddbInterval = 3600
+
+    f = privacyFilter(clients_address, server_address, ddbInterval)
+    f.logger.setLevel(logging.DEBUG)
+    f.run()
+```
+
 
 ## TODO
 
