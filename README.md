@@ -70,7 +70,7 @@ $ sudo service rtlsdr-ogn start
 
 ## Development
 
-For testing puroses, you can run it from the command line:
+For testing purposes, you can run it from the command line:
 ```
 $ cd ogn-privacy-filter
 $ ./privacyFilter.py
@@ -78,8 +78,6 @@ Listen for new client at 127.0.2.1:14580
 Connected to server 37.187.40.234:14580
 [...]
 ```
-
-
 
 ## TODO
 
