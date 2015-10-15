@@ -46,7 +46,7 @@ All the packets from the APRS-Server are forwarded to the station.
 
    Append the following line:
    ```
-   echo "127.0.2.1	aprs.glidernet.org
+   127.0.2.1	aprs.glidernet.org
    ```
 
 
