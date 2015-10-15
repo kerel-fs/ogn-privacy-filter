@@ -21,34 +21,38 @@ import socket
 import sys
 import queue
 import time
+import logging
+
 from aprslib import parse, ParseError
 from ognutils import getDDB, listTrackable
 
 
 class privacyFilter:
     # Check packets from client
-    def checkPacket(self,packet):
+    def checkPacket(self, packet):
         if packet.decode('latin-1')[0] == '#':
             # Client Banner
+            self.logger.info("FWD:  %s (station status)"%packet.decode('latin-1'))
             return True
         else:
             try:
                 parsed = parse(packet)
                 if parsed['from'] in self.trackable:
+                    self.logger.info("FWD:  %s"%packet.decode('utf-8'))
                     return True
                 else:
-                    print("Drop packet from %s (noTrack): %s"%(str(parsed['from']),str(packet)))
+                    self.logger.info("DROP: %s (noTrack)"%packet.decode('utf-8'))
                     return False
             except ParseError:
                 if packet.startswith(b'user'):
+                    # Login phrase detected
                     callsign = packet.split(b' ')[1].decode('latin-1')
-                    print("Detected own callsign: %s"%callsign)
+                    self.logger.info("Detected own callsign: %s"%callsign)
                     self.callsigns.append(callsign)
                     self.trackable.append(callsign)
-                    # Login phrase detected
                     return True
                 else:
-                    print("Drop invalid packet: %s"%str(packet))
+                    self.logger.info("DROP: %s (invalid packet)"%packet.decode('utf-8'))
                     return False
 
 
@@ -56,7 +60,7 @@ class privacyFilter:
     def updateDDB(self):
         self.trackable = listTrackable(getDDB())
         self.trackable.extend(self.callsigns)
-        print('Updated trackable list (from DDB), %i entries.'%len(self.trackable))
+        self.logger.info('Updated trackable list, %i entries.'%len(self.trackable))
 
 
     def connectToServer(self):
@@ -66,10 +70,10 @@ class privacyFilter:
                 self.server = socket.create_connection(self.server_address, 15)
                 connected = True
             except (socket.timeout, ConnectionRefusedError):
-                print("Connect failed for %s:%s, retry..."%self.server_address)
+                self.logger.info("Server connect failed for %s:%s, retry..."%self.server_address)
                 time.sleep(10)
         self.server.setblocking(0)
-        print("Connected to server %s:%s"%self.server.getpeername())
+        self.logger.info("Connected to server %s:%s"%self.server.getpeername())
 
 
     def closeConnection(self,s):
@@ -81,22 +85,25 @@ class privacyFilter:
 
         if s == self.server:
             # Server disconnected
-            print("Server disconnected, can't forward packets.")
+            self.logger.info("Server disconnected, can't forward packets, try reconnect...")
             del self.server
             self.connectToServer()
             self.inputs.append(self.server)
         else:
             # Client disconnected
-            print("Client disconnected, wait for reconnect...")
+            self.logger.info("Client disconnected, wait for reconnect...")
             self.client_connected = False
 
 
     def __init__(self,clients_address = ('127.0.2.1', 14580), server_address = ('aprs-pool.glidernet.org', 14580), ddbInterval = 3600):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
         self.clients = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clients.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.clients.setblocking(0)
         
-        print('Listen for new client at %s:%s' % clients_address)
+        self.logger.info('Listen for new client at %s:%s'%clients_address)
         self.clients.bind(clients_address)
         self.clients.listen(1)
 
@@ -155,12 +162,13 @@ class privacyFilter:
                         self.inputs.append(connection)
                         self.client = connection
                         self.client_connected = True
-                        print("New client at %s:%s"%client_address)
+                        self.logger.info("New client at %s:%s"%client_address)
                     else:
-                         print("A client is already connected")
+                        # Shoud be unreachable
+                        self.logger.info("Refuse new connection: A client is already connected.")
                 else:
                     data = s.recv(1024)
-                    print("Received at port %s: %s"%(s.getpeername()[1],data))
+                    self.logger.debug("RECV: %s (port %s)"%(data.rstrip().decode('utf-8'),s.getpeername()[1]))
                     if data:
                         # Received data
                         if s == self.server:
@@ -192,8 +200,8 @@ class privacyFilter:
                     except queue.Empty:
                         self.outputs.remove(s)
                     else:
-                        print("Send %s"%next_msg)
                         s.send(next_msg)
+                        self.logger.debug("SEND: %s (port %s)"%(next_msg.rstrip().decode('utf-8'),s.getpeername()[1],))
                 else:
                     # to Client
                     try:
@@ -201,15 +209,17 @@ class privacyFilter:
                     except queue.Empty:
                         self.outputs.remove(s)
                     else:
-                        print("Send %s"%next_msg)
                         s.send(next_msg)
+                        self.logger.debug("SEND: %s (port %s)"%(next_msg.rstrip().decode('utf-8'),s.getpeername()[1],))
         
             # Handle exceptional conditions
             for s in exceptional:
-                print("Exceptional condition:")
                 self.closeConnection(s)
 
 
 if __name__ == "__main__":
+    FORMAT = '%(asctime)-15s %(levelname)-5s %(message)s'
+    logging.basicConfig(format=FORMAT, level=logging.INFO)
+
     f = privacyFilter()
     f.run()
