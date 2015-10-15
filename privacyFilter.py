@@ -155,8 +155,8 @@ class privacyFilter:
         
             for s in readable:
                 if s is self.clients:
-                    # Accept new client connection
                     if not self.client_connected:
+                        # Accept new client connection
                         connection, client_address = s.accept()
                         connection.setblocking(0)
                         self.inputs.append(connection)
@@ -164,7 +164,11 @@ class privacyFilter:
                         self.client_connected = True
                         self.logger.info("New client at %s:%s"%client_address)
                     else:
-                        # Shoud be unreachable
+                        # Refuse new client connection
+                        # NOTE: Its not possible to directly refuse the connection
+                        #       http://stackoverflow.com/questions/19214552/python-socket-server-reject-connection-from-address
+                        connection, client_address = s.accept()
+                        connection.close()
                         self.logger.info("Refuse new connection: A client is already connected.")
                 else:
                     data = s.recv(1024)
