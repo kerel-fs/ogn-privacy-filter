@@ -68,6 +68,7 @@ class privacyFilter:
                 self.server = socket.create_connection(self.server_address, 15)
                 connected = True
             except (socket.timeout, ConnectionRefusedError):
+                # TODO: catch socket.gaierror
                 self.logger.info("Server connect failed for %s:%s, retry..." % self.server_address)
                 time.sleep(10)
         self.server.setblocking(0)
@@ -82,6 +83,7 @@ class privacyFilter:
 
         if s == self.server:
             # Server disconnected
+            # TODO: Adjust error message
             self.logger.info("Server disconnected, can't forward packets, try reconnect...")
             del self.server
             self.connectToServer()
@@ -157,6 +159,8 @@ class privacyFilter:
                         self.client = connection
                         self.client_connected = True
                         self.logger.info("New client at %s:%s" % client_address)
+                        # TODO: Flush buffers, reconnect to server (to get a fresh banner)
+                        self.closeConnection(self.server)
                     else:
                         # Refuse new client connection
                         # NOTE: Its not possible to directly refuse the connection
