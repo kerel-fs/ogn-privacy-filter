@@ -1,3 +1,7 @@
+# DEPRECATED
+## Please use "UseDDBAsWhitelist" feature (introduced in rtlsdr-ogn v0.2.4) instead
+
+
 # OGN Privacy Filter
 
 A script to selectively forward APRS packets.
